@@ -111,7 +111,7 @@ def main():
     st.set_page_config(page_title="🔐 CVE Management Assistant", layout="wide", initial_sidebar_state="auto")
     
     # Title and description
-    st.title("🔐 CVE Management Assistant")
+    st.title("🔐 Automated CVE Management Using AI")
     st.markdown(
         "Use this tool to fetch detailed CVE information and get AI-powered patching advice. "
         "Enter a CVE ID below and explore vulnerability details and recommendations."
