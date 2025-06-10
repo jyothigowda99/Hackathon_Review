@@ -110,12 +110,8 @@ def severity_badge(severity: str):
 def main():
     st.set_page_config(page_title="🔐 CVE Management Assistant", layout="wide", initial_sidebar_state="auto")
     
-    # Title and description
     st.title("🔐 Automated CVE Management Using AI")
-    st.markdown(
-        "Use this tool to fetch detailed CVE information and get AI-powered patching advice. "
-        "Enter a CVE ID below and explore vulnerability details and recommendations."
-    )
+    st.markdown("Use this tool to fetch detailed CVE information and get AI-powered patching advice. Enter a CVE ID below and explore vulnerability details and recommendations.")
     st.markdown("---")
     
     with st.container():
@@ -167,25 +163,37 @@ def main():
                         try:
                             st.markdown("### 📥 Preview & Download First Reference")
                             first_url = first_5_refs[0]
-                            ref_response = requests.get(first_url, timeout=10)
-                            ref_response.raise_for_status()
-                            content = ref_response.content
-                            suffix = ".pdf" if ".pdf" in first_url.lower() else ".html"
-                            fname = f"reference_1{suffix}"
+
+                            if "github.com" in first_url and "/commit/" in first_url:
+                                patch_url = first_url + ".patch"
+                                ref_response = requests.get(patch_url, timeout=10)
+                                ref_response.raise_for_status()
+                                content = ref_response.content
+                                suffix = ".patch"
+                                fname = "reference_1.patch"
+                                mime = "text/x-patch"
+                                preview_html = f"<pre>{content.decode('utf-8', errors='ignore')}</pre>"
+                            else:
+                                ref_response = requests.get(first_url, timeout=10)
+                                ref_response.raise_for_status()
+                                content = ref_response.content
+                                suffix = ".pdf" if ".pdf" in first_url.lower() else ".html"
+                                fname = f"reference_1{suffix}"
+                                mime = "application/pdf" if suffix == ".pdf" else "text/html"
+                                preview_html = content.decode("utf-8", errors="ignore")
 
                             st.download_button(
                                 label="⬇️ Download First Reference",
                                 data=content,
                                 file_name=fname,
-                                mime="application/pdf" if suffix == ".pdf" else "text/html",
+                                mime=mime,
                                 use_container_width=True
                             )
 
                             if suffix == ".pdf":
                                 display_pdf_from_bytes(content)
                             else:
-                                html_str = content.decode("utf-8", errors="ignore")
-                                st.components.v1.html(html_str, height=600, scrolling=True)
+                                st.components.v1.html(preview_html, height=600, scrolling=True)
                         except Exception as e:
                             st.error(f"Failed to preview reference: {e}")
 
@@ -194,10 +202,16 @@ def main():
                         with zipfile.ZipFile(zip_buffer, "w") as zipf:
                             for i, url in enumerate(first_5_refs):
                                 try:
-                                    r = requests.get(url, timeout=10)
-                                    r.raise_for_status()
-                                    ext = ".pdf" if ".pdf" in url.lower() else ".html"
-                                    zipf.writestr(f"ref_{i+1}{ext}", r.content)
+                                    if "github.com" in url and "/commit/" in url:
+                                        patch_url = url + ".patch"
+                                        r = requests.get(patch_url, timeout=10)
+                                        r.raise_for_status()
+                                        zipf.writestr(f"ref_{i+1}.patch", r.content)
+                                    else:
+                                        r = requests.get(url, timeout=10)
+                                        r.raise_for_status()
+                                        ext = ".pdf" if ".pdf" in url.lower() else ".html"
+                                        zipf.writestr(f"ref_{i+1}{ext}", r.content)
                                 except Exception:
                                     continue
                         zip_buffer.seek(0)
