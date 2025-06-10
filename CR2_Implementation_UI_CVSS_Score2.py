@@ -14,14 +14,26 @@ llmClient = OpenAI(
 )
 
 WEIGHTS = {"high": 3, "medium": 2, "low": 1}
-def get_weight(val): return WEIGHTS.get(val.lower(), 1)
+def get_weight(val, key=None):
+    if key == "hsm_usage":
+        reverse_weights = {"high": 1, "medium": 2, "low": 3}
+        return reverse_weights.get(val.lower(), 1)
+    return WEIGHTS.get(val.lower(), 1)
+#def get_weight(val): return WEIGHTS.get(val.lower(), 1)
 
 def calculate_modifier(inputs):
-    total = sum(get_weight(v) for v in inputs.values())
+    total = sum(get_weight(v, k) for k, v in inputs.items())
     if total >= 18: return 1.5, total
     elif total >= 14: return 1.3, total
     elif total >= 10: return 1.2, total
     return 1.0, total
+
+#def calculate_modifier(inputs):
+ #   total = sum(get_weight(v) for v in inputs.values())
+  #  if total >= 18: return 1.5, total
+  #  elif total >= 14: return 1.3, total
+  #  elif total >= 10: return 1.2, total
+  #  return 1.0, total
 
 def query_llm(prompt, model_name="gpt-4o-mini"):
     try:
@@ -107,7 +119,7 @@ def main():
         ar = col3.selectbox("Availability Risk", ["Low", "Medium", "High"])
 
         data_sensitivity = col1.selectbox("Data Sensitivity", ["Low", "Medium", "High"])
-        hsm_usage = col2.selectbox("HSM Usage", ["Low", "Medium", "High"])
+        hsm_usage = col2.selectbox("HSM Usage", ["High", "Medium", "Low"])
         external_trust = col3.selectbox("External Trust Dependency", ["Low", "Medium", "High"])
         financial_risk = col1.selectbox("Financial Impact Risk", ["Low", "Medium", "High"])
 
